@@ -148,6 +148,29 @@ def main_i():
     def store_local_obj(op, dmake):
         return lambda o, oo, vx, p: store_local(o, oo, FreeObject(op=op, **dmake(vx)), p)
 
+
+    def process_dir(option, opt_str, value, parser):
+
+        processedDir = set()
+        dirs=value.split(",")
+
+        for i in range(len(dirs)):
+                dirs[i]=os.path.normpath(dirs[i])
+
+        dirs.sort(lambda x,y: cmp(len(x), len(y)))
+
+        for path in dirs:
+                head, tail = os.path.split(path)
+                while head and tail:
+                        if head in processedDir:
+                                break
+                        head, tail = os.path.split(head)
+                else:
+                        processedDir.add(path)
+
+        setattr(parser.values,option.dest,processedDir)
+
+
     op = OptionParser(usage="%prog [options...] <master> <slave>", version="%prog 0.0.1")
     op.add_option('--gluster-command-dir', metavar='DIR',   default='')
     op.add_option('--gluster-log-file',    metavar='LOGF',  default=os.devnull, type=str, action='callback', callback=store_abs)
@@ -177,6 +200,8 @@ def main_i():
     op.add_option('--socketdir',           metavar='DIR')
     op.add_option('--state-socket-unencoded', metavar='SOCKF', type=str, action='callback', callback=store_abs)
     op.add_option('--checkpoint',          metavar='LABEL', default='')
+    op.add_option('-d','--dirs',action="callback",callback=process_dir,type=str,help="Add Directories to Sync")
+
     # tunables for failover/failback mechanism:
     # None   - gsyncd behaves as normal
     # blind  - gsyncd works with xtime pairs to identify
