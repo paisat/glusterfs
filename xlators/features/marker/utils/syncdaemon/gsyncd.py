@@ -149,7 +149,7 @@ def main_i():
         return lambda o, oo, vx, p: store_local(o, oo, FreeObject(op=op, **dmake(vx)), p)
 
 
-    def process_dir(option, opt_str, value, parser):
+    def process_dirs(option, opt_str, value, parser):
 
         processedDir = set()
         dirs=value.split(",")
@@ -174,6 +174,7 @@ def main_i():
     op = OptionParser(usage="%prog [options...] <master> <slave>", version="%prog 0.0.1")
     op.add_option('--gluster-command-dir', metavar='DIR',   default='')
     op.add_option('--gluster-log-file',    metavar='LOGF',  default=os.devnull, type=str, action='callback', callback=store_abs)
+    op.add_option('--dirs'		,  metavar='SUBDIR',default='.',        type=str, action='callback', callback=process_dirs)
     op.add_option('--gluster-log-level',   metavar='LVL')
     op.add_option('--gluster-params',      metavar='PRMS',  default='')
     op.add_option('--gluster-cli-options', metavar='OPTS',  default='--log-file=-')
@@ -200,7 +201,6 @@ def main_i():
     op.add_option('--socketdir',           metavar='DIR')
     op.add_option('--state-socket-unencoded', metavar='SOCKF', type=str, action='callback', callback=store_abs)
     op.add_option('--checkpoint',          metavar='LABEL', default='')
-    op.add_option('-d','--dirs',action="callback",callback=process_dir,type=str,help="Add Directories to Sync")
 
     # tunables for failover/failback mechanism:
     # None   - gsyncd behaves as normal
@@ -240,7 +240,7 @@ def main_i():
     op.add_option('--canonicalize-url',        dest='url_print', action='callback', callback=store_local_curry('canon'))
     op.add_option('--canonicalize-escape-url', dest='url_print', action='callback', callback=store_local_curry('canon_esc'))
 
-    tunables = [ norm(o.get_opt_string()[2:]) for o in op.option_list if o.callback in (store_abs, 'store_true', None) and o.get_opt_string() not in ('--version', '--help') ]
+    tunables = [ norm(o.get_opt_string()[2:]) for o in op.option_list if o.callback in (store_abs,process_dirs, 'store_true', None) and o.get_opt_string() not in ('--version', '--help') ]
     remote_tunables = [ 'listen', 'go_daemon', 'timeout', 'session_owner', 'config_file', 'use_rsync_xattrs' ]
     rq_remote_tunables = { 'listen': True }
 
