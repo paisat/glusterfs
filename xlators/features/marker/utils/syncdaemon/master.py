@@ -536,8 +536,10 @@ class GMasterBase(object):
             t = Thread(target=keep_alive)
             t.start()
         self.lastreport['time'] = time.time()
+	gconf.dirs=gconf.dirs.split(",")
         while not self.terminate:
-            self.crawl()
+		for d in gconf.dirs:
+			self.crawl(d)
 
     def add_job(self, path, label, job, *a, **kw):
         """insert @job function to job table at @path with @label"""
@@ -655,7 +657,7 @@ class GMasterBase(object):
         assert that the file systems (master / slave) underneath do not change and actions
         taken upon some condition will not lose their context by the time they are performed.
         """
-        if path == '.':
+        if path in gconf.dirs:
             if self.start:
                 self.crawls += 1
                 logging.debug("... crawl #%d done, took %.6f seconds" % \
@@ -706,7 +708,11 @@ class GMasterBase(object):
             if xtr != ENOENT:
                 self.slave.server.purge(path)
             try:
-                self.slave.server.mkdir(path)
+		if '.' in gconf.dirs:
+                	self.slave.server.mkdir(path)
+		else:
+			self.slave.server.mkdir_p(path)
+			
             except OSError:
                 self.add_failjob(path, 'no-remote-node')
                 return
@@ -714,7 +720,7 @@ class GMasterBase(object):
         else:
             self.xtime_reversion_hook(path, xtl, xtr)
             if xtl == xtr:
-                if path == '.' and self.change_seen:
+                if path in gconf.dirs and self.change_seen:
                     self.turns += 1
                     self.change_seen = False
                     if self.total_turns:
@@ -724,7 +730,7 @@ class GMasterBase(object):
                             logging.info("reached turn limit")
                             self.terminate = True
                 return
-        if path == '.':
+        if path in gconf.dirs:
             self.change_seen = True
         try:
             dem = self.master.server.entries(path)
@@ -796,7 +802,7 @@ class GMasterBase(object):
             else:
                 # ignore fifos, sockets and special files
                 pass
-        if path == '.':
+        if path in gconf.dirs:
             self.wait(path, xtl)
 
 class BoxClosedErr(Exception):
