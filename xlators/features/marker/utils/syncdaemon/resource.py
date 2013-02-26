@@ -340,6 +340,14 @@ class Server(object):
                 cls.purge(path)
                 return ctor(path)
             raise
+	
+    @classmethod
+    @_pathguard
+    def mkdir_p(cls,path):
+	
+	if not  os.path.exists(path):
+		os.makedirs(path)
+	
 
     @classmethod
     @_pathguard
@@ -356,7 +364,8 @@ class Server(object):
     def xtime(cls, path, uuid):
         """query xtime extended attribute
 
-        Return xtime of @path for @uuid as a pair of integers.
+        Return ssmethod
+    @_pathguardxtime of @path for @uuid as a pair of integers.
         "Normal" errors due to non-existent @path or extended attribute
         are tolerated and errno is returned in such a case.
         """
