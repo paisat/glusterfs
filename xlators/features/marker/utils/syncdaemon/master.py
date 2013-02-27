@@ -61,7 +61,8 @@ def gmaster_builder():
     modemixin = getattr(this, modemixin.capitalize() + 'Mixin')
     sendmarkmixin = boolify(gconf.use_rsync_xattrs) and SendmarkRsyncMixin or SendmarkNormalMixin
     purgemixin = boolify(gconf.ignore_deletes) and PurgeNoopMixin or PurgeNormalMixin
-    class _GMaster(GMasterBase, modemixin, sendmarkmixin, purgemixin):
+    syncmixin= FullSyncMixin if gconf.dirs=='.' else SelectiveSyncMixin 
+    class _GMaster(GMasterBase, modemixin, sendmarkmixin, purgemixin,syncmixin):
         pass
     return _GMaster
 
@@ -320,7 +321,32 @@ class PurgeNoopMixin(object):
     def purge_missing(self, path, names):
         pass
 
+class FullSyncMixin(object):
 
+    def create_dir(self,path):
+	self.slave.server.mkdir(path)
+
+    def crawler(self):
+	while not self.terminate:
+		logging.debug("Full Sync Mixing ")	
+		self.crawl()	
+	
+	
+
+class SelectiveSyncMixin(object):
+
+    def create_dir(self,path):
+	self.slave.server.mkdir_p(path)
+
+    def crawler(self):
+
+	gconf.dirs=gconf.dirs.split(",")
+	while not self.terminate:
+		logging.debug("Selective Sync Mixing")
+		for d in gconf.dirs:
+				self.crawl(d)
+	
+		    
 
 class GMasterBase(object):
     """abstract class impementling master role"""
@@ -536,10 +562,8 @@ class GMasterBase(object):
             t = Thread(target=keep_alive)
             t.start()
         self.lastreport['time'] = time.time()
-	gconf.dirs=gconf.dirs.split(",")
-        while not self.terminate:
-		for d in gconf.dirs:
-			self.crawl(d)
+        self.crawler()
+
 
     def add_job(self, path, label, job, *a, **kw):
         """insert @job function to job table at @path with @label"""
@@ -657,6 +681,9 @@ class GMasterBase(object):
         assert that the file systems (master / slave) underneath do not change and actions
         taken upon some condition will not lose their context by the time they are performed.
         """
+
+	
+	
         if path in gconf.dirs:
             if self.start:
                 self.crawls += 1
@@ -708,10 +735,8 @@ class GMasterBase(object):
             if xtr != ENOENT:
                 self.slave.server.purge(path)
             try:
-		if '.' in gconf.dirs:
-                	self.slave.server.mkdir(path)
-		else:
-			self.slave.server.mkdir_p(path)
+		
+		self.create_dir(path)
 			
             except OSError:
                 self.add_failjob(path, 'no-remote-node')
@@ -803,7 +828,8 @@ class GMasterBase(object):
                 # ignore fifos, sockets and special files
                 pass
         if path in gconf.dirs:
-            self.wait(path, xtl)
+            self.wait(path, xtl)          
+    
 
 class BoxClosedErr(Exception):
     pass
