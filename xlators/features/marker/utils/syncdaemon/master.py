@@ -472,9 +472,9 @@ class GMasterBase(object):
     def get_extra_info(self):
 	
 		
-	str_info="\nFile synced : "+str(self.filesSynced)
-	str_info+="\nBytes Synced : "+str(self.syncer.bytesSynced)+ " KB"
-	str_info+="\nSync Time : "+str(self.syncTime)+" seconds"
+	str_info="\nFile synced : %d" %(self.filesSynced)
+	str_info+="\nBytes Synced : %d KB" %(self.syncer.bytesSynced)
+	str_info+="\nSync Time : %f seconds" %(self.syncTime)
 	self.crawlTime=datetime.now()-self.crawlStartTime
 	
 	years , days =divmod(self.crawlTime.days,365.25)
@@ -497,7 +497,7 @@ class GMasterBase(object):
 
 	date+=str(s)+" S"
 	self.crawlTime=date
-	str_info+="\nCrawl Time : "+str(self.crawlTime)
+	str_info+="\nCrawl Time : %s" %(str(self.crawlTime))
 	str_info+="\n\0"
 	
 	return str_info	
